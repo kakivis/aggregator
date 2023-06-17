@@ -74,6 +74,71 @@ public class HerokuContactRepositoryTest {
     Mockito.verify(herokuClientMock, Mockito.times(2)).getContacts(Mockito.anyInt());
   }
 
+  @Test
+  void testResponseWithWrongPaginationInfoShouldCallClientAsInfoSuggests() {
+    Map<String, String> pageValues = Map.ofEntries(
+        Map.entry("Page-Items", "3"),
+        Map.entry("Total-Pages", "1"),
+        Map.entry("Total-Count", "6")
+    );
+
+    List<HerokuContactDto> pageOneContacts = new ArrayList<>();
+    pageOneContacts.add(generateRandomContact());
+    pageOneContacts.add(generateRandomContact());
+    pageOneContacts.add(generateRandomContact());
+
+    Mockito.when(herokuClientMock.getContacts(1)).thenReturn(buildResponse(pageValues, pageOneContacts));
+
+    List<HerokuContactDto> pageTwoContacts = new ArrayList<>();
+    pageTwoContacts.add(generateRandomContact());
+    pageTwoContacts.add(generateRandomContact());
+    pageTwoContacts.add(generateRandomContact());
+    pageTwoContacts.add(generateRandomContact());
+
+    Mockito.when(herokuClientMock.getContacts(2)).thenReturn(buildResponse(pageValues, pageTwoContacts));
+
+
+    List<Contact> contacts = sut.getContacts();
+
+    Assertions.assertEquals(3, contacts.size());
+    Mockito.verify(herokuClientMock, Mockito.times(1)).getContacts(Mockito.anyInt());
+  }
+
+  @Test
+  void testResponseWithoutPaginationInfoShouldNotKeepCallingTheClient() {
+    Map<String, String> pageValues = Map.ofEntries();
+
+    List<HerokuContactDto> pageOneContacts = new ArrayList<>();
+    pageOneContacts.add(generateRandomContact());
+    pageOneContacts.add(generateRandomContact());
+    pageOneContacts.add(generateRandomContact());
+
+    Mockito.when(herokuClientMock.getContacts(1)).thenReturn(buildResponse(pageValues, pageOneContacts));
+
+    List<Contact> contacts = sut.getContacts();
+
+    Assertions.assertEquals(3, contacts.size());
+    Mockito.verify(herokuClientMock, Mockito.times(1)).getContacts(Mockito.anyInt());
+  }
+
+  @Test
+  void testResponseWithoutContactsShouldCallClientOnce() {
+    Map<String, String> pageValues = Map.ofEntries(
+        Map.entry("Page-Items", "20"),
+        Map.entry("Total-Pages", "1"),
+        Map.entry("Total-Count", "0")
+    );
+
+    List<HerokuContactDto> pageOneContacts = new ArrayList<>();
+
+    Mockito.when(herokuClientMock.getContacts(1)).thenReturn(buildResponse(pageValues, pageOneContacts));
+
+    List<Contact> contacts = sut.getContacts();
+
+    Assertions.assertEquals(0, contacts.size());
+    Mockito.verify(herokuClientMock, Mockito.times(1)).getContacts(Mockito.anyInt());
+  }
+
   private ResponseEntity<HerokuContactListDto> buildResponse(Map<String, String> headers, List<HerokuContactDto> contacts) {
     HttpHeaders mockHeaders = new HttpHeaders();
     headers.forEach(mockHeaders::add);
