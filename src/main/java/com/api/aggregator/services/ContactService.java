@@ -1,19 +1,19 @@
 package com.api.aggregator.services;
 
 import com.api.aggregator.model.Contact;
-import com.api.aggregator.repositories.HerokuContactRepository;
+import com.api.aggregator.repositories.ContactRepository;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ContactService {
-  private final HerokuContactRepository herokuContactRepository;
+  private final ContactRepository contactRepository;
 
-  public ContactService(HerokuContactRepository herokuContactRepository) {
-    this.herokuContactRepository = herokuContactRepository;
+  public ContactService(ContactRepository contactRepository) {
+    this.contactRepository = contactRepository;
   }
 
   public List<Contact> getContacts() {
-    return herokuContactRepository.getContacts();
+    return contactRepository.getContacts();
   }
 }
