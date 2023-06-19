@@ -14,42 +14,38 @@ import org.springframework.stereotype.Repository;
 public class HerokuContactRepository implements ContactRepository {
 
   private final HerokuClient client;
-  private static final String SOURCE = "KENECT_LABS";
-  public static final String TOTAL_PAGES = "Total-Pages";
+  private static final String SOURCE_NAME = "KENECT_LABS";
+  public static final String TOTAL_PAGES_KEY = "Total-Pages";
 
   public HerokuContactRepository(HerokuClient client) {
     this.client = client;
   }
 
   public List<Contact> getContacts() {
-    List<Contact> list = new ArrayList<>();
-    ContactConverter converter = new ContactConverter();
-
     ResponseEntity<HerokuContactListDto> response = client.getContacts(1);
 
-    if (response.getBody() == null) return list;
+    validateResponse(response);
 
-    List<HerokuContactDto> contactResponseList = response.getBody().getContacts();
-    list.addAll(contactResponseList.stream().map(c -> converter.toModel(c, SOURCE)).toList());
+    List<Contact> list = new ArrayList<>();
+    extractContactsFromResponse(list, response);
 
-    Integer totalPages = getIntFromHeader(response, TOTAL_PAGES);
+    Integer totalPages = getPageNumberFromHeader(response);
 
-    if (totalPages == null || totalPages < 2) return list;
+    if (totalPages < 2) return list;
 
     for (int i = 2; i <= totalPages; i++) {
       response = client.getContacts(i);
 
-      if (response.getBody() == null) return list;
+      validateResponse(response);
 
-      contactResponseList = response.getBody().getContacts();
-      list.addAll(contactResponseList.stream().map(c -> converter.toModel(c, SOURCE)).toList());
+      extractContactsFromResponse(list, response);
     }
 
     return list;
   }
 
-  private Integer getIntFromHeader(ResponseEntity<HerokuContactListDto> response, String headerKey) {
-    String totalPagesValue = response.getHeaders().getFirst(headerKey);
+  private Integer getPageNumberFromHeader(ResponseEntity<HerokuContactListDto> response) {
+    String totalPagesValue = response.getHeaders().getFirst(TOTAL_PAGES_KEY);
 
     if (totalPagesValue == null) {
       return null;
@@ -57,4 +53,17 @@ public class HerokuContactRepository implements ContactRepository {
 
     return Integer.parseInt(totalPagesValue);
   }
+  
+  private void validateResponse(ResponseEntity<HerokuContactListDto> response) {
+    if (response.getBody() == null || getPageNumberFromHeader(response) == null) {
+      throw new RuntimeException("Could not fetch contacts info.");
+    }
+  }
+
+  private void extractContactsFromResponse(List<Contact> list, ResponseEntity<HerokuContactListDto> response) {
+    ContactConverter converter = new ContactConverter();
+    List<HerokuContactDto> contactResponseList = response.getBody().getContacts();
+    list.addAll(contactResponseList.stream().map(c -> converter.toModel(c, SOURCE_NAME)).toList());
+  }
+
 }

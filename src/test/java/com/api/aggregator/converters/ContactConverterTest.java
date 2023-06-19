@@ -25,11 +25,13 @@ public class ContactConverterTest {
     OffsetDateTime expectedUpdatedAt = OffsetDateTime.of(2020, 6, 25, 4, 22, 23, 0, ZoneOffset.UTC);
 
     ContactConverter converter = new ContactConverter();
-    Contact converted = converter.toModel(herokuDto, "TEST_SOURCE");
+    String source = "TEST_SOURCE";
+    Contact converted = converter.toModel(herokuDto, source);
+
     Assertions.assertEquals(herokuDto.getId(), converted.getId());
     Assertions.assertEquals(herokuDto.getName(), converted.getName());
     Assertions.assertEquals(herokuDto.getEmail(), converted.getEmail());
-    Assertions.assertEquals("TEST_SOURCE", converted.getSource());
+    Assertions.assertEquals(source, converted.getSource());
     Assertions.assertEquals(expectedCreatedAt, converted.getCreatedAt());
     Assertions.assertEquals(expectedUpdatedAt, converted.getUpdatedAt());
 
