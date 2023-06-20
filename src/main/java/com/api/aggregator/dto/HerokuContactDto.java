@@ -10,6 +10,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @ToString
 public class HerokuContactDto {
   private Integer id;
